@@ -278,10 +278,13 @@ def inject_theme_manager():
     <script>
     (function() {
         var doc;
+        var parentWin;
         try {
             doc = window.parent.document;
+            parentWin = window.parent;
         } catch (e) {
             doc = document;
+            parentWin = window;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -490,52 +493,72 @@ def inject_theme_manager():
             });
         };
 
+        // Expose on parent window so persistent parent elements can invoke it
+        if (window.parent) {
+            window.parent.applyTheme = window.applyTheme;
+        }
+
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 3. Create the ⋮ dropdown menu in parent
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         var containerId = 'custom-theme-menu-container';
         var container = doc.getElementById(containerId);
-        if (!container) {
-            container = doc.createElement('div');
-            container.id = containerId;
-            container.innerHTML = `
-                <div id="theme-menu-btn" title="Display Settings">⋮</div>
-                <div id="theme-dropdown">
-                    <div class="theme-opt" data-val="dark">🌑 Dark Mode<span class="opt-check">✓</span></div>
-                    <div class="theme-opt" data-val="light">☀️ Light Mode<span class="opt-check">✓</span></div>
-                    <div class="theme-opt" data-val="system">💻 System Default<span class="opt-check">✓</span></div>
-                </div>
-            `;
-            doc.body.appendChild(container);
+        if (container) {
+            container.remove();
+        }
 
-            var btn = container.querySelector('#theme-menu-btn');
-            var dropdown = container.querySelector('#theme-dropdown');
+        container = doc.createElement('div');
+        container.id = containerId;
+        container.innerHTML = `
+            <div id="theme-menu-btn" title="Display Settings">⋮</div>
+            <div id="theme-dropdown">
+                <div class="theme-opt" data-val="dark">🌑 Dark Mode<span class="opt-check">✓</span></div>
+                <div class="theme-opt" data-val="light">☀️ Light Mode<span class="opt-check">✓</span></div>
+                <div class="theme-opt" data-val="system">💻 System Default<span class="opt-check">✓</span></div>
+            </div>
+        `;
+        doc.body.appendChild(container);
 
-            btn.addEventListener('click', function(e) {
+        var btn = container.querySelector('#theme-menu-btn');
+        var dropdown = container.querySelector('#theme-dropdown');
+
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+
+        if (parentWin.closeThemeDropdown) {
+            doc.removeEventListener('click', parentWin.closeThemeDropdown);
+        }
+        parentWin.closeThemeDropdown = function() {
+            var dp = doc.getElementById('theme-dropdown');
+            if (dp) dp.classList.remove('show');
+        };
+        doc.addEventListener('click', parentWin.closeThemeDropdown);
+
+        container.querySelectorAll('.theme-opt').forEach(function(opt) {
+            opt.addEventListener('click', function(e) {
                 e.stopPropagation();
-                dropdown.classList.toggle('show');
-            });
-
-            doc.addEventListener('click', function() {
+                var val = opt.getAttribute('data-val');
+                localStorage.setItem('theme-preference', val);
+                if (parentWin && typeof parentWin.applyTheme === 'function') {
+                    parentWin.applyTheme(val);
+                } else {
+                    window.applyTheme(val);
+                }
                 dropdown.classList.remove('show');
             });
-
-            container.querySelectorAll('.theme-opt').forEach(function(opt) {
-                opt.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    var val = opt.getAttribute('data-val');
-                    localStorage.setItem('theme-preference', val);
-                    window.applyTheme(val);
-                    dropdown.classList.remove('show');
-                });
-            });
-        }
+        });
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 4. Apply saved preference on load
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         var initialPref = localStorage.getItem('theme-preference') || 'dark';
-        window.applyTheme(initialPref);
+        if (window.parent && typeof window.parent.applyTheme === 'function') {
+            window.parent.applyTheme(initialPref);
+        } else {
+            window.applyTheme(initialPref);
+        }
 
         // Listen for system preference changes
         try {
