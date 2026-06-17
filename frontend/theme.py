@@ -47,6 +47,10 @@ def inject_theme_manager():
         --info-bg: rgba(59,130,246,0.1);
         --warning-bg: rgba(245,158,11,0.1);
         --shadow-color: rgba(0,0,0,0.3);
+        --stat-purple: #a5b4fc;
+        --stat-blue: #93c5fd;
+        --stat-green: #6ee7b7;
+        --stat-orange: #fcd34d;
     }
 
     /* ═══════════════════════════════════════════════
@@ -83,6 +87,10 @@ def inject_theme_manager():
         --info-bg: rgba(59,130,246,0.08);
         --warning-bg: rgba(245,158,11,0.08);
         --shadow-color: rgba(0,0,0,0.06);
+        --stat-purple: #4f46e5;
+        --stat-blue: #2563eb;
+        --stat-green: #059669;
+        --stat-orange: #d97706;
     }
 
     /* DARK MODE explicit — same as :root */
@@ -117,6 +125,10 @@ def inject_theme_manager():
         --info-bg: rgba(59,130,246,0.1);
         --warning-bg: rgba(245,158,11,0.1);
         --shadow-color: rgba(0,0,0,0.3);
+        --stat-purple: #a5b4fc;
+        --stat-blue: #93c5fd;
+        --stat-green: #6ee7b7;
+        --stat-orange: #fcd34d;
     }
 
     /* ═══════════════════════════════════════════════
@@ -460,17 +472,17 @@ def inject_theme_manager():
             doc.documentElement.setAttribute('data-theme', theme);
             document.documentElement.setAttribute('data-theme', theme);
 
-            // Force Streamlit iframe overrides for light mode
-            var iframeStyleId = 'streamlit-iframe-theme-overrides';
-            var iframeStyle = document.getElementById(iframeStyleId);
-            if (!iframeStyle) {
-                iframeStyle = document.createElement('style');
-                iframeStyle.id = iframeStyleId;
-                document.head.appendChild(iframeStyle);
+            // Force Streamlit parent overrides for light mode
+            var parentStyleId = 'streamlit-parent-theme-overrides';
+            var parentStyle = doc.getElementById(parentStyleId);
+            if (!parentStyle) {
+                parentStyle = doc.createElement('style');
+                parentStyle.id = parentStyleId;
+                doc.head.appendChild(parentStyle);
             }
 
             if (theme === 'light') {
-                iframeStyle.innerHTML = `
+                parentStyle.innerHTML = `
                     /* Light mode: override Streamlit's dark defaults inside iframes */
                     .stMarkdown, p, span, h1, h2, h3, h4, h5, h6,
                     label, li, a, td, th,
@@ -526,7 +538,7 @@ def inject_theme_manager():
                     }
                 `;
             } else {
-                iframeStyle.innerHTML = '';
+                parentStyle.innerHTML = '';
             }
 
             // Highlight active option in dropdown
