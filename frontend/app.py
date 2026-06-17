@@ -175,10 +175,34 @@ html, body, [class*="css"] {
 .stat-card.green::before  { background: linear-gradient(90deg, #10b981, #34d399); }
 .stat-card.orange::before { background: linear-gradient(90deg, #f59e0b, #f97316); }
 
+.stat-card {
+    cursor: pointer;
+}
 .stat-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.25);
     box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+.stat-card.active {
+    border: 1.5px solid rgba(99,102,241,0.8) !important;
+    box-shadow: 0 10px 30px rgba(99,102,241,0.3) !important;
+    background: rgba(99,102,241,0.08) !important;
+    transform: translateY(-2px);
+}
+.stat-card.active.blue {
+    border-color: rgba(59,130,246,0.8) !important;
+    box-shadow: 0 10px 30px rgba(59,130,246,0.3) !important;
+    background: rgba(59,130,246,0.08) !important;
+}
+.stat-card.active.green {
+    border-color: rgba(16,185,129,0.8) !important;
+    box-shadow: 0 10px 30px rgba(16,185,129,0.3) !important;
+    background: rgba(16,185,129,0.08) !important;
+}
+.stat-card.active.orange {
+    border-color: rgba(245,158,11,0.8) !important;
+    box-shadow: 0 10px 30px rgba(245,158,11,0.3) !important;
+    background: rgba(245,158,11,0.08) !important;
 }
 .stat-icon {
     font-size: 32px;
@@ -383,6 +407,10 @@ def get_live_stats():
 
 stats = get_live_stats()
 
+# Read current selected view from query parameter
+query_params = st.query_params
+selected_view = query_params["view"] if "view" in query_params else None
+
 # ── HERO ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="hero-container">
@@ -460,34 +488,224 @@ if search_query and search_query.strip():
         st.info(f'No emails found for "{search_query}".')
 
 # ── LIVE STATS GRID ──────────────────────────────────────────────────────────
+active_emails = "active" if selected_view == "emails" else ""
+active_threads = "active" if selected_view == "threads" else ""
+active_tasks = "active" if selected_view == "tasks" else ""
+active_insights = "active" if selected_view == "insights" else ""
+
 st.markdown(f"""
 <div class="stats-grid">
-    <div class="stat-card purple">
-        <span class="stat-icon">📧</span>
-        <div class="stat-number">{stats['emails']}</div>
-        <div class="stat-label">Total Emails</div>
-        <div class="stat-sub">{stats['ai_processed']} AI-analyzed</div>
-    </div>
-    <div class="stat-card blue">
-        <span class="stat-icon">🧵</span>
-        <div class="stat-number">{stats['threads']}</div>
-        <div class="stat-label">Active Threads</div>
-        <div class="stat-sub">Across all groups</div>
-    </div>
-    <div class="stat-card green">
-        <span class="stat-icon">✅</span>
-        <div class="stat-number">{stats['tasks']}</div>
-        <div class="stat-label">Tasks Extracted</div>
-        <div class="stat-sub">By AI analysis</div>
-    </div>
-    <div class="stat-card orange">
-        <span class="stat-icon">💡</span>
-        <div class="stat-number">{stats['insights']}</div>
-        <div class="stat-label">Insights Generated</div>
-        <div class="stat-sub">Thread summaries</div>
-    </div>
+    <a href="?view=emails" target="_self" style="text-decoration: none; color: inherit;">
+        <div class="stat-card purple {active_emails}">
+            <span class="stat-icon">📧</span>
+            <div class="stat-number">{stats['emails']}</div>
+            <div class="stat-label">Total Emails</div>
+            <div class="stat-sub">{stats['ai_processed']} AI-analyzed</div>
+        </div>
+    </a>
+    <a href="?view=threads" target="_self" style="text-decoration: none; color: inherit;">
+        <div class="stat-card blue {active_threads}">
+            <span class="stat-icon">🧵</span>
+            <div class="stat-number">{stats['threads']}</div>
+            <div class="stat-label">Active Threads</div>
+            <div class="stat-sub">Across all groups</div>
+        </div>
+    </a>
+    <a href="?view=tasks" target="_self" style="text-decoration: none; color: inherit;">
+        <div class="stat-card green {active_tasks}">
+            <span class="stat-icon">✅</span>
+            <div class="stat-number">{stats['tasks']}</div>
+            <div class="stat-label">Tasks Extracted</div>
+            <div class="stat-sub">By AI analysis</div>
+        </div>
+    </a>
+    <a href="?view=insights" target="_self" style="text-decoration: none; color: inherit;">
+        <div class="stat-card orange {active_insights}">
+            <span class="stat-icon">💡</span>
+            <div class="stat-number">{stats['insights']}</div>
+            <div class="stat-label">Insights Generated</div>
+            <div class="stat-sub">Thread summaries</div>
+        </div>
+    </a>
 </div>
 """, unsafe_allow_html=True)
+
+# ── SELECT-VIEW DRAWER/PANEL ────────────────────────────────────────────────
+if selected_view:
+    st.markdown("""
+    <style>
+    .details-panel {
+        background: rgba(13, 20, 35, 0.6);
+        border: 1px solid rgba(99, 102, 241, 0.4);
+        border-radius: 20px;
+        padding: 24px;
+        margin: 20px 0 32px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(12px);
+    }
+    .details-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 4px;
+    }
+    .details-subtitle {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-bottom: 20px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    db = SessionLocal()
+    try:
+        if selected_view == "emails":
+            st.markdown('<div class="details-panel">', unsafe_allow_html=True)
+            col_t, col_btn = st.columns([4, 1])
+            with col_t:
+                st.markdown(f'<div class="details-title">📬 Ingested Emails ({stats["emails"]})</div>', unsafe_allow_html=True)
+                st.markdown('<div class="details-subtitle">All email communications stored in the platform database</div>', unsafe_allow_html=True)
+            with col_btn:
+                if st.button("❌ Close Panel", key="close_emails", use_container_width=True):
+                    st.query_params.clear()
+                    st.rerun()
+            
+            emails = db.query(Email).order_by(Email.sent_timestamp.desc()).all()
+            if emails:
+                email_search = st.text_input("🔍 Filter emails by subject, sender, or content...", "", key="panel_email_search")
+                filtered_emails = emails
+                if email_search.strip():
+                    es_query = email_search.strip().lower()
+                    filtered_emails = [
+                        e for e in emails if 
+                        es_query in (e.subject or "").lower() or 
+                        es_query in (e.from_name or "").lower() or 
+                        es_query in (e.email_body or "").lower() or
+                        es_query in (e.department or "").lower()
+                    ]
+                
+                st.markdown(f"**Showing {len(filtered_emails)} emails (Click any email to expand and read body):**")
+                for email in filtered_emails[:30]:
+                    date_str = email.sent_timestamp.strftime('%Y-%m-%d %H:%M') if email.sent_timestamp else 'Unknown Date'
+                    with st.expander(f"✉️ {email.subject or 'No Subject'} — From: {email.from_name} ({email.department}) | {date_str}"):
+                        c1, c2 = st.columns([1, 2.5])
+                        with c1:
+                            st.markdown(f"**Sender:** {email.from_name} ({email.from_email})")
+                            st.markdown(f"**To Group:** {email.to_group or 'N/A'}")
+                            st.markdown(f"**Department:** {email.department or 'N/A'}")
+                            st.markdown(f"**Priority:** `{email.priority or 'Normal'}`")
+                            st.markdown(f"**Thread sequence:** #{email.thread_sequence or 1}")
+                        with c2:
+                            st.markdown("**Message Body:**")
+                            st.text(email.email_body)
+                if len(filtered_emails) > 30:
+                    st.info(f"Showing first 30 of {len(filtered_emails)} emails. Please use the filter above to find specific messages.")
+            else:
+                st.info("No emails found in the database.")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        elif selected_view == "threads":
+            st.markdown('<div class="details-panel">', unsafe_allow_html=True)
+            col_t, col_btn = st.columns([4, 1])
+            with col_t:
+                st.markdown(f'<div class="details-title">🧵 Active Discussion Threads ({stats["threads"]})</div>', unsafe_allow_html=True)
+                st.markdown('<div class="details-subtitle">Conversations grouped by thread identifier, sorted by latest activity</div>', unsafe_allow_html=True)
+            with col_btn:
+                if st.button("❌ Close Panel", key="close_threads", use_container_width=True):
+                    st.query_params.clear()
+                    st.rerun()
+
+            threads_data = db.query(
+                Email.thread_id,
+                func.count(Email.id).label("email_count"),
+                func.min(Email.sent_timestamp).label("started"),
+                func.max(Email.sent_timestamp).label("last_activity"),
+                func.max(Email.subject).label("subject"),
+                func.max(Email.department).label("department")
+            ).group_by(Email.thread_id).order_by(func.max(Email.sent_timestamp).desc()).all()
+
+            if threads_data:
+                st.markdown(f"**Showing {len(threads_data)} active conversation threads (Click to view full thread communication history):**")
+                for t in threads_data:
+                    start_str = t.started.strftime('%Y-%m-%d %H:%M') if t.started else 'Unknown'
+                    last_str = t.last_activity.strftime('%Y-%m-%d %H:%M') if t.last_activity else 'Unknown'
+                    with st.expander(f"🧵 {t.subject or 'Untitled Thread'} ({t.email_count} emails) | Dept: {t.department or 'General'} | Last Activity: {last_str}"):
+                        st.markdown(f"**Thread ID:** `{t.thread_id}`")
+                        st.markdown(f"**Started:** {start_str} &nbsp;·&nbsp; **Latest Update:** {last_str}")
+                        st.markdown("---")
+                        
+                        thread_emails = db.query(Email).filter(Email.thread_id == t.thread_id).order_by(Email.thread_sequence.asc()).all()
+                        for te in thread_emails:
+                            te_date = te.sent_timestamp.strftime('%Y-%m-%d %H:%M') if te.sent_timestamp else 'Unknown'
+                            st.markdown(f"📬 **Sequence #{te.thread_sequence}** | **{te.from_name}** | {te_date}")
+                            st.text(te.email_body)
+                            st.markdown("---")
+            else:
+                st.info("No active threads found.")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        elif selected_view == "tasks":
+            st.markdown('<div class="details-panel">', unsafe_allow_html=True)
+            col_t, col_btn = st.columns([4, 1])
+            with col_t:
+                st.markdown(f'<div class="details-title">✅ AI-Extracted Tasks ({stats["tasks"]})</div>', unsafe_allow_html=True)
+                st.markdown('<div class="details-subtitle">Action items automatically identified and extracted by Gemini AI from email threads</div>', unsafe_allow_html=True)
+            with col_btn:
+                if st.button("❌ Close Panel", key="close_tasks", use_container_width=True):
+                    st.query_params.clear()
+                    st.rerun()
+
+            tasks = db.query(Task).order_by(Task.id.desc()).all()
+            if tasks:
+                st.markdown(f"**Showing {len(tasks)} extracted tasks:**")
+                for task in tasks:
+                    status_emoji = "🟢" if task.status == "Open" else "🔵"
+                    with st.expander(f"📋 {task.task_description[:80]}... | Owner: {task.owner or 'Unassigned'} | {status_emoji} {task.status}"):
+                        st.markdown(f"**Task Description:** {task.task_description}")
+                        st.markdown(f"**Assigned Owner:** `{task.owner or 'Unassigned'}`")
+                        st.markdown(f"**Due Date:** `{task.due_date or 'TBD'}`")
+                        st.markdown(f"**Current Status:** `{task.status}`")
+                        
+                        if task.email_id:
+                            email = db.query(Email).filter(Email.id == task.email_id).first()
+                            if email:
+                                st.markdown("---")
+                                st.markdown(f"📧 **Source Email:** *{email.subject}* (From: {email.from_name} on {email.sent_timestamp.strftime('%Y-%m-%d') if email.sent_timestamp else 'Unknown Date'})")
+                                st.text(email.email_body)
+            else:
+                st.info("No AI-extracted tasks found.")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        elif selected_view == "insights":
+            st.markdown('<div class="details-panel">', unsafe_allow_html=True)
+            col_t, col_btn = st.columns([4, 1])
+            with col_t:
+                st.markdown(f'<div class="details-title">💡 Generated AI Insights ({stats["insights"]})</div>', unsafe_allow_html=True)
+                st.markdown('<div class="details-subtitle">High-level discussion summaries, decisions, and follow-ups extracted by Gemini AI</div>', unsafe_allow_html=True)
+            with col_btn:
+                if st.button("❌ Close Panel", key="close_insights", use_container_width=True):
+                    st.query_params.clear()
+                    st.rerun()
+
+            insights = db.query(Insight).order_by(Insight.created_date.desc()).all()
+            if insights:
+                st.markdown(f"**Showing {len(insights)} AI-generated topic insights:**")
+                for ins in insights:
+                    ins_date = ins.created_date.strftime('%Y-%m-%d %H:%M') if ins.created_date else 'Unknown'
+                    with st.expander(f"💡 {ins.topic or 'Untitled Insight'} | {ins_date}"):
+                        st.markdown(f"**Topic/Issue:** {ins.topic}")
+                        st.markdown(f"**Discussion Summary:**  \n{ins.summary}")
+                        if ins.decisions:
+                            st.markdown(f"**Decisions Made:**  \n{ins.decisions}")
+                        if ins.follow_ups:
+                            st.markdown(f"**Follow-up Actions:**  \n{ins.follow_ups}")
+                        st.markdown(f"**Thread ID:** `{ins.thread_id}`")
+            else:
+                st.info("No AI insights found.")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    finally:
+        db.close()
 
 st.markdown('<hr class="gradient-divider">', unsafe_allow_html=True)
 
