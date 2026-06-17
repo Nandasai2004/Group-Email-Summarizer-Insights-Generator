@@ -1,0 +1,30 @@
+# Environments
+venv/
+.env
+
+# Cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Databases & Large Data
+ges.db
+ges.db-shm
+ges.db-wal
+chroma_db/
+dataset.csv
+
+# Frontend (Not needed for Vercel API)
+frontend/
+requirements-frontend.txt
+
+# IDE
+.vscode/
+
+# Local Scripts
+run.bat
+start.sh
+verify_tasks.py
+inject_tasks.py
+list_models.py
+test_webhook.py
