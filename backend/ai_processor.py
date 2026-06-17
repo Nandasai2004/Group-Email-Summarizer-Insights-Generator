@@ -290,5 +290,86 @@ def process_unprocessed_emails():
     finally:
         db.close()
 
+
+def process_all_threads_batch(progress_callback=None):
+    """
+    Batch-processes all unprocessed email threads with rate limiting.
+    progress_callback(done, total, thread_id, status) is called after each thread.
+    Returns a summary dict: {processed, skipped, failed, total}
+    """
+    import time
+
+    db = SessionLocal()
+    try:
+        unprocessed_emails = db.query(Email).filter(Email.processed_by_ai == False).all()
+        if not unprocessed_emails:
+            return {"processed": 0, "skipped": 0, "failed": 0, "total": 0, "message": "All emails are already processed!"}
+
+        # Group by thread_id
+        thread_groups: dict = {}
+        for email in unprocessed_emails:
+            tid = str(email.thread_id)
+            if tid not in thread_groups:
+                thread_groups[tid] = []
+            thread_groups[tid].append(email)
+
+        total = len(thread_groups)
+        processed = 0
+        failed = 0
+        skipped = 0
+
+        logger.info(f"Starting batch processing of {total} threads...")
+
+        for idx, (thread_id, _) in enumerate(thread_groups.items()):
+            try:
+                process_single_thread(thread_id)
+                processed += 1
+                status = "✅ Done"
+                logger.info(f"Processed thread {thread_id} ({idx+1}/{total})")
+            except Exception as e:
+                err_str = str(e)
+                if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                    failed += 1
+                    status = f"⚠️ Quota hit — waiting 60s..."
+                    logger.warning(f"Quota limit hit on thread {thread_id}. Waiting 60 seconds...")
+                    if progress_callback:
+                        progress_callback(idx + 1, total, thread_id, status)
+                    time.sleep(60)
+                    # Retry once after waiting
+                    try:
+                        process_single_thread(thread_id)
+                        failed -= 1
+                        processed += 1
+                        status = "✅ Done (after retry)"
+                    except Exception as e2:
+                        status = f"❌ Failed: {str(e2)[:60]}"
+                        logger.error(f"Thread {thread_id} failed even after retry: {e2}")
+                else:
+                    failed += 1
+                    status = f"❌ Error: {err_str[:60]}"
+                    logger.error(f"Error processing thread {thread_id}: {e}")
+
+            if progress_callback:
+                progress_callback(idx + 1, total, thread_id, status)
+
+            # Rate limit: 1 second between API calls to stay within free tier
+            if idx < total - 1:
+                time.sleep(1.5)
+
+        summary = {
+            "processed": processed,
+            "skipped": skipped,
+            "failed": failed,
+            "total": total,
+            "message": f"Done! {processed}/{total} threads processed successfully."
+        }
+        logger.info(f"Batch processing complete: {summary}")
+        return summary
+
+    finally:
+        db.close()
+
+
 if __name__ == "__main__":
     process_unprocessed_emails()
+

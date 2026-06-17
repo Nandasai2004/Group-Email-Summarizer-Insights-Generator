@@ -413,6 +413,36 @@ def get_live_stats():
 
 stats = get_live_stats()
 
+# ── Unprocessed Alert Banner ─────────────────────────────────────────────────
+_db_check = SessionLocal()
+try:
+    _unproc = _db_check.query(func.count(Email.id)).filter(Email.processed_by_ai == False).scalar() or 0
+    _unproc_threads = _db_check.query(Email.thread_id).filter(Email.processed_by_ai == False).distinct().count()
+finally:
+    _db_check.close()
+
+if _unproc > 0:
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, rgba(251,191,36,0.12), rgba(245,158,11,0.06));
+                border: 1px solid rgba(251,191,36,0.4);
+                border-radius: 14px;
+                padding: 16px 22px;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 14px;">
+        <div style="font-size:28px;">⚡</div>
+        <div>
+            <div style="font-size:15px; font-weight:700; color:#fbbf24;">
+                {_unproc} emails ({_unproc_threads} threads) not yet summarized by AI
+            </div>
+            <div style="font-size:13px; color:#94a3b8; margin-top:3px;">
+                Go to <strong style="color:#fbbf24;">⚡ Process Emails</strong> in the sidebar to run the AI summarizer and extract tasks, decisions, and insights.
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 # Read current selected view from query parameter
 query_params = st.query_params
 selected_view = query_params["view"] if "view" in query_params else None
