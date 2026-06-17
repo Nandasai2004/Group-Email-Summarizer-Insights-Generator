@@ -9,7 +9,11 @@ from typing import List, Optional
 from backend.database import SessionLocal, Email, Task, Insight
 from datetime import datetime
 from tenacity import retry, wait_exponential, stop_after_attempt
-import chromadb
+try:
+    import chromadb
+    CHROMADB_AVAILABLE = True
+except ImportError:
+    CHROMADB_AVAILABLE = False
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,10 +27,15 @@ if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
 
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here" else None
 
-# Initialize local ChromaDB for semantic search
-CHROMA_PATH = os.getenv("CHROMA_PATH", "./chroma_db")
-chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
-insight_collection = chroma_client.get_or_create_collection(name="insights")
+# Initialize local ChromaDB for semantic search conditionally
+if CHROMADB_AVAILABLE:
+    CHROMA_PATH = os.getenv("CHROMA_PATH", "./chroma_db")
+    chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+    insight_collection = chroma_client.get_or_create_collection(name="insights")
+else:
+    chroma_client = None
+    insight_collection = None
+    logger.warning("ChromaDB is not installed (likely on Vercel). Semantic Search embedding is disabled.")
 
 class TaskExtraction(BaseModel):
     task_description: str
@@ -219,7 +228,7 @@ def process_single_thread(thread_id: str):
                 
             # Embed into ChromaDB for Semantic Search
             embed_text = f"Topic: {analysis.topic}. Summary: {analysis.summary}. Decisions: {analysis.decisions}"
-            if client:
+            if client and insight_collection:
                 try:
                     embed_response = client.models.embed_content(
                         model="gemini-embedding-2",
@@ -233,6 +242,8 @@ def process_single_thread(thread_id: str):
                     )
                 except Exception as e:
                     logger.error(f"Failed to embed insight: {e}")
+            else:
+                logger.info("Skipping ChromaDB embedding because it is not installed or Gemini is disabled.")
             
             # 2. Insert Tasks
             for email in thread_emails:
