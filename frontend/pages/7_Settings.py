@@ -78,10 +78,32 @@ with tab1:
 # 🎨 DISPLAY THEME
 with tab2:
     st.subheader("Theme Customization")
-    st.markdown("Customize your workspace visual experience. Selection is synchronized instantly.")
+    st.markdown("Customize your workspace visual experience. Changes apply instantly across all pages.")
     
+    st.markdown("<br>", unsafe_allow_html=True)
+
     theme_options = ["Dark Mode", "Light Mode", "System Default"]
-    selected_theme = st.radio("Choose Display Mode:", theme_options, index=0)
+    theme_descriptions = {
+        "Dark Mode": "Deep navy gradients with soft glowing accents. Optimized for low-light environments and extended screen time.",
+        "Light Mode": "Clean, bright interface with subtle shadows. Ideal for well-lit workspaces and daytime use.",
+        "System Default": "Automatically matches your operating system's display preference (light or dark)."
+    }
+    theme_icons = {"Dark Mode": "🌑", "Light Mode": "☀️", "System Default": "💻"}
+
+    col_t1, col_t2, col_t3 = st.columns(3)
+    for col, opt in zip([col_t1, col_t2, col_t3], theme_options):
+        with col:
+            is_active = "border: 2px solid #6366f1; box-shadow: 0 0 20px rgba(99,102,241,0.25);" if opt == theme_options[0] else "border: 1px solid rgba(255,255,255,0.06);"
+            st.markdown(f"""
+            <div style="text-align: center; padding: 28px 20px; background: rgba(255,255,255,0.03); {is_active} border-radius: 16px; min-height: 180px;">
+                <div style="font-size: 36px; margin-bottom: 12px;">{theme_icons[opt]}</div>
+                <div style="font-size: 16px; font-weight: 700; margin-bottom: 8px;">{opt}</div>
+                <div style="font-size: 12px; color: #64748b; line-height: 1.5;">{theme_descriptions[opt]}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    selected_theme = st.radio("Choose Display Mode:", theme_options, index=0, horizontal=True)
     
     theme_val = "dark" if selected_theme == "Dark Mode" else ("light" if selected_theme == "Light Mode" else "system")
     
@@ -97,7 +119,7 @@ with tab2:
     </script>
     """
     components.html(js_code, height=0)
-    st.info(f"🎨 Selected theme display option: **{selected_theme}**")
+    st.success(f"✅ Theme set to **{selected_theme}** — synced across all pages via the ⋮ menu.")
 
 # 🔔 NOTIFICATIONS
 with tab3:
