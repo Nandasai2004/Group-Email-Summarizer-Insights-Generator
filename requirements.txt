@@ -2,4 +2,5 @@ fastapi
 sqlalchemy
 pydantic
 google-genai
+python-dotenv
 tenacity
