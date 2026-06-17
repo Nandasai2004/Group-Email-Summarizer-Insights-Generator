@@ -130,6 +130,11 @@ def inject_theme_manager():
         transition: background 0.4s ease, color 0.3s ease;
     }
 
+    /* Hide default Streamlit header, deploy button, and options dots */
+    header, [data-testid="stHeader"], .stAppDeployButton, [data-testid="stAppDeployButton"] {
+        display: none !important;
+    }
+
     /* Sidebar */
     [data-testid="stSidebar"] {
         background-color: var(--sidebar-bg) !important;
