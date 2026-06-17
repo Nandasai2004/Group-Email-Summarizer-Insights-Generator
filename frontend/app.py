@@ -112,7 +112,7 @@ html, body, [class*="css"] {
     font-size: clamp(36px, 5vw, 68px);
     font-weight: 900;
     line-height: 1.1;
-    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #7c3aed 100%);
+    background: var(--title-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -120,7 +120,7 @@ html, body, [class*="css"] {
 }
 .hero-subtitle {
     font-size: 18px;
-    color: #94a3b8;
+    color: var(--text-muted);
     max-width: 600px;
     margin: 0 auto 40px;
     line-height: 1.7;
@@ -221,10 +221,10 @@ html, body, [class*="css"] {
     line-height: 1;
     margin-bottom: 8px;
 }
-.stat-card.purple .stat-number { color: #a5b4fc; }
-.stat-card.blue .stat-number   { color: #93c5fd; }
-.stat-card.green .stat-number  { color: #6ee7b7; }
-.stat-card.orange .stat-number { color: #fcd34d; }
+.stat-card.purple .stat-number { color: var(--stat-purple); }
+.stat-card.blue .stat-number   { color: var(--stat-blue); }
+.stat-card.green .stat-number  { color: var(--stat-green); }
+.stat-card.orange .stat-number { color: var(--stat-orange); }
 .stat-label {
     font-size: 13px;
     color: #64748b;
