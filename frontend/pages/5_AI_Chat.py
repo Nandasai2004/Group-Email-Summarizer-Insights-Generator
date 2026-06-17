@@ -81,6 +81,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+from frontend.theme import inject_theme_manager
+inject_theme_manager()
+
 # ── Custom CSS ──────────────────────────────────────────────────────────────
 st.markdown("""
 <style>

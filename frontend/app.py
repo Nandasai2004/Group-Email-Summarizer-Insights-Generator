@@ -12,6 +12,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+from frontend.theme import inject_theme_manager
+inject_theme_manager()
+
+from frontend.auth import check_login_status
+user = check_login_status()
+
 # ── Custom CSS ──────────────────────────────────────────────────────────────
 st.markdown("""
 <style>

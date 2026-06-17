@@ -94,5 +94,42 @@ class ExecutiveReport(Base):
     recommendations = Column(Text)
     created_at = Column(DateTime)
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, default="Jane Doe")
+    email = Column(String, default="jane.doe@example.com")
+    role = Column(String, default="Executive Director")
+    department = Column(String, default="Operations")
+    password = Column(String, default="admin")
+    
+    # Notification preferences
+    email_alerts = Column(Boolean, default=True)
+    daily_summaries = Column(Boolean, default=False)
+    slack_notifications = Column(Boolean, default=True)
+    priority_only = Column(Boolean, default=True)
+    
+    # Security preferences
+    api_key_enabled = Column(Boolean, default=False)
+    two_factor_enabled = Column(Boolean, default=False)
+
 # Create the tables
 Base.metadata.create_all(bind=engine)
+
+# Seed default user if not exists
+db = SessionLocal()
+try:
+    default_user = db.query(User).first()
+    if not default_user:
+        new_user = User(
+            name="Jane Doe",
+            email="jane.doe@example.com",
+            role="Executive Director",
+            department="Operations",
+            password="admin"
+        )
+        db.add(new_user)
+        db.commit()
+finally:
+    db.close()
