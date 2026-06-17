@@ -276,6 +276,17 @@ def inject_theme_manager():
         background: rgba(99,102,241,0.5);
     }
     </style>
+    <script>
+    (function() {
+        try {
+            var pref = localStorage.getItem('theme-preference') || 'dark';
+            document.documentElement.setAttribute('data-theme', pref);
+            if (window.parent && window.parent.document) {
+                window.parent.document.documentElement.setAttribute('data-theme', pref);
+            }
+        } catch(e) {}
+    })();
+    </script>
     """, unsafe_allow_html=True)
 
     # ── JavaScript: ⋮ Dropdown Menu + Theme Engine ──────────────
