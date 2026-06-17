@@ -1,23 +1,549 @@
 import streamlit as st
-
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from backend.database import SessionLocal, Email, Task, Insight
+from sqlalchemy import func
+import time
 
 st.set_page_config(
-    page_title="Email Summarizer & Insights",
-    page_icon="📧",
-    layout="wide"
+    page_title="GES — Group Email Intelligence",
+    page_icon="⚡",
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-st.title("📧 Group Email Summarizer & Insights Generator")
+# ── Custom CSS ──────────────────────────────────────────────────────────────
 st.markdown("""
-Welcome to the Executive Dashboard.
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-This application automatically collects group emails, analyzes conversations, extracts tasks, and generates insights.
-Use the sidebar to navigate through the different modules:
-- **1 Overview**: Executive KPIs and high-level metrics.
-- **2 Tasks**: Detailed view of open and overdue tasks extracted by AI.
-- **3 Insights**: Discussion topics and conversation trends.
-- **4 Search**: Semantic/Keyword search repository for historical knowledge.
-- **5 AI Chat**: Ask questions directly to the AI about pending issues and trends.
-""")
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
 
-st.info("👈 Please select a page from the sidebar to continue.")
+/* Dark gradient background */
+.stApp {
+    background: linear-gradient(135deg, #0a0a1a 0%, #0d1b2a 40%, #0a1628 100%);
+    color: #e2e8f0;
+}
+
+/* Hide default Streamlit elements */
+#MainMenu, footer, header { visibility: hidden; }
+
+/* ── HAMBURGER MENU BUTTON ── */
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    background: rgba(99,102,241,0.15) !important;
+    border: 1px solid rgba(99,102,241,0.35) !important;
+    border-radius: 8px !important;
+    color: #a5b4fc !important;
+    top: 12px !important;
+    left: 12px !important;
+}
+[data-testid="collapsedControl"]:hover {
+    background: rgba(99,102,241,0.3) !important;
+    border-color: rgba(99,102,241,0.6) !important;
+}
+/* Hide sidebar collapse arrow when open */
+[data-testid="stSidebarCollapseButton"] { display: none !important; }
+
+
+/* ── NAV BUTTONS ── */
+[data-testid="stBaseButton-secondary"] {
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1)) !important;
+    border: 1px solid rgba(99,102,241,0.4) !important;
+    border-radius: 10px !important;
+    color: #a5b4fc !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    transition: all 0.25s ease !important;
+    margin-top: 6px;
+}
+[data-testid="stBaseButton-secondary"]:hover {
+    background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.25)) !important;
+    border-color: rgba(99,102,241,0.7) !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(99,102,241,0.25) !important;
+    transform: translateY(-2px);
+}
+
+
+/* ── HERO SECTION ── */
+.hero-container {
+    text-align: center;
+    padding: 60px 20px 40px;
+    position: relative;
+}
+.hero-badge {
+    display: inline-block;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 50px;
+    margin-bottom: 24px;
+    animation: pulse-badge 2s infinite;
+}
+@keyframes pulse-badge {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(99,102,241,0); }
+}
+.hero-title {
+    font-size: clamp(36px, 5vw, 68px);
+    font-weight: 900;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 20px;
+}
+.hero-subtitle {
+    font-size: 18px;
+    color: #94a3b8;
+    max-width: 600px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+    font-weight: 400;
+}
+.hero-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 50px;
+    padding: 8px 20px;
+    font-size: 13px;
+    color: #10b981;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+.dot-live {
+    width: 8px; height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    display: inline-block;
+    animation: blink 1.2s infinite;
+}
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* ── STAT CARDS ── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 32px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 28px 24px;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 20px 20px 0 0;
+}
+.stat-card.purple::before { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+.stat-card.blue::before   { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
+.stat-card.green::before  { background: linear-gradient(90deg, #10b981, #34d399); }
+.stat-card.orange::before { background: linear-gradient(90deg, #f59e0b, #f97316); }
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255,255,255,0.15);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+.stat-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    display: block;
+}
+.stat-number {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+.stat-card.purple .stat-number { color: #a5b4fc; }
+.stat-card.blue .stat-number   { color: #93c5fd; }
+.stat-card.green .stat-number  { color: #6ee7b7; }
+.stat-card.orange .stat-number { color: #fcd34d; }
+.stat-label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.stat-sub {
+    font-size: 11px;
+    color: #475569;
+    margin-top: 6px;
+}
+
+/* ── FEATURE CARDS ── */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 24px 0;
+}
+.feature-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+.feature-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(99,102,241,0.08), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.feature-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(99,102,241,0.3);
+    box-shadow: 0 12px 32px rgba(99,102,241,0.15);
+}
+.feature-card:hover::after { opacity: 1; }
+.feature-icon {
+    font-size: 36px;
+    margin-bottom: 14px;
+    display: block;
+}
+.feature-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #e2e8f0;
+    margin-bottom: 8px;
+}
+.feature-desc {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.6;
+}
+.feature-arrow {
+    margin-top: 16px;
+    font-size: 12px;
+    color: #6366f1;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* ── ACTIVITY FEED ── */
+.activity-container {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 20px;
+    padding: 24px;
+    margin: 16px 0;
+}
+.activity-header {
+    font-size: 16px;
+    font-weight: 700;
+    color: #e2e8f0;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+}
+.activity-dot.purple { background: #6366f1; }
+.activity-dot.green  { background: #10b981; }
+.activity-dot.blue   { background: #3b82f6; }
+.activity-dot.orange { background: #f59e0b; }
+.activity-text { font-size: 13px; color: #94a3b8; line-height: 1.5; flex: 1; }
+.activity-text strong { color: #e2e8f0; }
+.activity-time { font-size: 11px; color: #475569; white-space: nowrap; }
+
+/* ── SECTION HEADERS ── */
+.section-header {
+    font-size: 22px;
+    font-weight: 800;
+    color: #e2e8f0;
+    margin-bottom: 6px;
+}
+.section-sub {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 24px;
+}
+
+/* ── CTA BUTTON ── */
+.cta-container {
+    text-align: center;
+    margin: 40px 0 20px;
+}
+.cta-text {
+    font-size: 13px;
+    color: #475569;
+    margin-top: 12px;
+}
+
+/* ── DIVIDER ── */
+.gradient-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent);
+    margin: 40px 0;
+    border: none;
+}
+
+/* ── TECH PILLS ── */
+.tech-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 20px 0 40px;
+}
+.tech-pill {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+# ── Fetch Live Stats ─────────────────────────────────────────────────────────
+@st.cache_data(ttl=30)
+def get_live_stats():
+    db = SessionLocal()
+    try:
+        total_emails   = db.query(func.count(Email.id)).scalar() or 0
+        total_tasks    = db.query(func.count(Task.id)).scalar() or 0
+        total_threads  = db.query(func.count(func.distinct(Email.thread_id))).scalar() or 0
+        total_insights = db.query(func.count(Insight.id)).scalar() or 0
+        ai_processed   = db.query(func.count(Email.id)).filter(Email.processed_by_ai == True).scalar() or 0
+        latest_topics  = db.query(Insight).order_by(Insight.created_date.desc()).limit(4).all()
+        latest_tasks   = db.query(Task).order_by(Task.id.desc()).limit(4).all()
+        return {
+            "emails": total_emails,
+            "tasks": total_tasks,
+            "threads": total_threads,
+            "insights": total_insights,
+            "ai_processed": ai_processed,
+            "latest_topics": latest_topics,
+            "latest_tasks": latest_tasks,
+        }
+    finally:
+        db.close()
+
+stats = get_live_stats()
+
+# ── HERO ────────────────────────────────────────────────────────────────────
+st.markdown(f"""
+<div class="hero-container">
+    <div class="hero-badge">⚡ AI-Powered Intelligence Platform</div>
+    <h1 class="hero-title">Group Email Summarizer<br>&amp; Insights Generator</h1>
+    <div class="hero-status">
+        <span class="dot-live"></span>
+        {stats['ai_processed']} emails processed by AI &nbsp;·&nbsp; {stats['insights']} insights generated
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── LIVE STATS GRID ──────────────────────────────────────────────────────────
+st.markdown(f"""
+<div class="stats-grid">
+    <div class="stat-card purple">
+        <span class="stat-icon">📧</span>
+        <div class="stat-number">{stats['emails']}</div>
+        <div class="stat-label">Total Emails</div>
+        <div class="stat-sub">{stats['ai_processed']} AI-analyzed</div>
+    </div>
+    <div class="stat-card blue">
+        <span class="stat-icon">🧵</span>
+        <div class="stat-number">{stats['threads']}</div>
+        <div class="stat-label">Active Threads</div>
+        <div class="stat-sub">Across all groups</div>
+    </div>
+    <div class="stat-card green">
+        <span class="stat-icon">✅</span>
+        <div class="stat-number">{stats['tasks']}</div>
+        <div class="stat-label">Tasks Extracted</div>
+        <div class="stat-sub">By AI analysis</div>
+    </div>
+    <div class="stat-card orange">
+        <span class="stat-icon">💡</span>
+        <div class="stat-number">{stats['insights']}</div>
+        <div class="stat-label">Insights Generated</div>
+        <div class="stat-sub">Thread summaries</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown('<hr class="gradient-divider">', unsafe_allow_html=True)
+
+# ── RECENT ACTIVITY + MODULES ────────────────────────────────────────────────
+col_left, col_right = st.columns([1.1, 1], gap="large")
+
+with col_left:
+    st.markdown('<div class="section-header">🗂️ Recent AI Activity</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-sub">Live feed of the latest AI-processed insights</div>', unsafe_allow_html=True)
+
+    colors = ["purple", "green", "blue", "orange"]
+    icons  = ["💡", "✅", "📌", "🔍"]
+
+    if stats["latest_topics"]:
+        items_html = ""
+        for i, insight in enumerate(stats["latest_topics"]):
+            color = colors[i % len(colors)]
+            icon  = icons[i % len(icons)]
+            summary_preview = (str(insight.summary)[:80] + "...") if insight.summary else "No summary."
+            items_html += f"""
+            <div class="activity-item">
+                <div class="activity-dot {color}"></div>
+                <div class="activity-text">
+                    <strong>{icon} {insight.topic or 'Untitled'}</strong><br>
+                    {summary_preview}
+                </div>
+            </div>"""
+
+        if stats["latest_tasks"]:
+            for i, task in enumerate(stats["latest_tasks"][:2]):
+                items_html += f"""
+                <div class="activity-item">
+                    <div class="activity-dot green"></div>
+                    <div class="activity-text">
+                        <strong>✅ Task Extracted</strong><br>
+                        {str(task.task_description)[:70]}... — <em>Owner: {task.owner or 'TBD'}</em>
+                    </div>
+                </div>"""
+
+        st.markdown(f'<div class="activity-container"><div class="activity-header">📡 Live Feed</div>{items_html}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div class="activity-container">
+            <div class="activity-header">📡 Live Feed</div>
+            <div class="activity-item">
+                <div class="activity-dot purple"></div>
+                <div class="activity-text"><strong>No activity yet</strong><br>Send an email to the webhook to get started.</div>
+            </div>
+        </div>""", unsafe_allow_html=True)
+
+with col_right:
+    st.markdown('<div class="section-header">🚀 Navigate Modules</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-sub">Click a button below to go to that module</div>', unsafe_allow_html=True)
+
+    # Row 1
+    btn_col1, btn_col2 = st.columns(2)
+    with btn_col1:
+        st.markdown("""
+        <div class="feature-card">
+            <span class="feature-icon">📊</span>
+            <div class="feature-title">Overview</div>
+            <div class="feature-desc">Executive KPIs, email trends &amp; metrics at a glance.</div>
+        </div>""", unsafe_allow_html=True)
+        if st.button("→ Open Overview", key="nav_overview", use_container_width=True):
+            st.switch_page("pages/1_Overview.py")
+
+    with btn_col2:
+        st.markdown("""
+        <div class="feature-card">
+            <span class="feature-icon">✅</span>
+            <div class="feature-title">Tasks</div>
+            <div class="feature-desc">AI-extracted tasks with owners, due dates &amp; status.</div>
+        </div>""", unsafe_allow_html=True)
+        if st.button("→ Open Tasks", key="nav_tasks", use_container_width=True):
+            st.switch_page("pages/2_Tasks.py")
+
+    # Row 2
+    btn_col3, btn_col4 = st.columns(2)
+    with btn_col3:
+        st.markdown("""
+        <div class="feature-card">
+            <span class="feature-icon">💡</span>
+            <div class="feature-title">Insights</div>
+            <div class="feature-desc">Discussion topics, decisions &amp; conversation trends.</div>
+        </div>""", unsafe_allow_html=True)
+        if st.button("→ Open Insights", key="nav_insights", use_container_width=True):
+            st.switch_page("pages/3_Insights.py")
+
+    with btn_col4:
+        st.markdown("""
+        <div class="feature-card">
+            <span class="feature-icon">🔍</span>
+            <div class="feature-title">Search</div>
+            <div class="feature-desc">Semantic &amp; keyword search across your email history.</div>
+        </div>""", unsafe_allow_html=True)
+        if st.button("→ Open Search", key="nav_search", use_container_width=True):
+            st.switch_page("pages/4_Search.py")
+
+    # Row 3
+    btn_col5, btn_col6 = st.columns(2)
+    with btn_col5:
+        st.markdown("""
+        <div class="feature-card">
+            <span class="feature-icon">🤖</span>
+            <div class="feature-title">AI Chat</div>
+            <div class="feature-desc">Ask the AI about pending issues, risks &amp; trends.</div>
+        </div>""", unsafe_allow_html=True)
+        if st.button("→ Open AI Chat", key="nav_chat", use_container_width=True):
+            st.switch_page("pages/5_AI_Chat.py")
+
+    with btn_col6:
+        st.markdown("""
+        <div class="feature-card">
+            <span class="feature-icon">📋</span>
+            <div class="feature-title">Executive Report</div>
+            <div class="feature-desc">Generate macro-level intelligence reports by date range.</div>
+        </div>""", unsafe_allow_html=True)
+        if st.button("→ Open Report", key="nav_report", use_container_width=True):
+            st.switch_page("pages/6_Executive_Report.py")
+
+
+
+# ── AUTO-REFRESH ─────────────────────────────────────────────────────────────
+st.markdown('<hr class="gradient-divider">', unsafe_allow_html=True)
+col_a, col_b, col_c = st.columns([1, 2, 1])
+with col_b:
+    auto_refresh = st.toggle("🔄 Auto-refresh every 30 seconds", value=False)
+    if auto_refresh:
+        st.success("✅ Live mode enabled — dashboard will refresh automatically!")
+        time.sleep(30)
+        st.rerun()
+
+st.markdown('<div class="cta-text" style="text-align:center; color:#475569; font-size:12px; padding-bottom:40px;">GES Platform · Powered by Gemini 2.5 Flash · Built with FastAPI & Streamlit</div>', unsafe_allow_html=True)
