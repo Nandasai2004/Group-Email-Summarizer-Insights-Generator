@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+google-genai
+streamlit
+python-dotenv
+pandas
+plotly
+tenacity
+chromadb
+fpdf2

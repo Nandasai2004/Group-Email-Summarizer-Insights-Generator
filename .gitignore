@@ -1,0 +1,14 @@
+# Environments
+venv/
+.env
+
+# Cache
+__pycache__/
+*.pyc
+
+# Database
+ges.db
+chroma_db/
+
+# IDE
+.vscode/
