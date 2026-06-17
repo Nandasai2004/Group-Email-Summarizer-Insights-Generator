@@ -42,7 +42,10 @@ for email in emails:
 
 # 8-9: Verify ChromaDB
 print("\n=== CHROMADB ===")
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
+import os
+
+CHROMA_PATH = os.getenv("CHROMA_PATH", "./chroma_db")
+chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 insight_collection = chroma_client.get_collection(name="insights")
 print(f"Total documents in Chroma: {insight_collection.count()}")
 

@@ -12,7 +12,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here" else None
 
 # Initialize ChromaDB client pointing to the same persistent path
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
+CHROMA_PATH = os.getenv("CHROMA_PATH", "./chroma_db")
+chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 insight_collection = chroma_client.get_or_create_collection(name="insights")
 
 st.set_page_config(page_title="Knowledge Search", page_icon="🔍", layout="wide")

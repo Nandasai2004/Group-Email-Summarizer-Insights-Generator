@@ -24,7 +24,8 @@ if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here" else None
 
 # Initialize local ChromaDB for semantic search
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
+CHROMA_PATH = os.getenv("CHROMA_PATH", "./chroma_db")
+chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 insight_collection = chroma_client.get_or_create_collection(name="insights")
 
 class TaskExtraction(BaseModel):
