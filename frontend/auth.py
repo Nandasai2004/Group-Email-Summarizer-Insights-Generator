@@ -3,25 +3,25 @@ from backend.database import SessionLocal, User
 
 def check_login_status():
     """
-    Checks if user is logged in. If not, renders a beautiful login page and halts page execution.
-    If logged in, returns the current logged-in User database object.
+    Checks if user is logged in. Automatically authenticates without showing a login form.
     """
-    if "logged_in" not in st.session_state:
-        st.session_state["logged_in"] = False
-        st.session_state["user_email"] = None
-        st.session_state["user_name"] = None
+    st.session_state["logged_in"] = True
+    st.session_state["user_email"] = "jane.doe@example.com"
+    st.session_state["user_name"] = "Jane Doe"
 
-    if st.session_state["logged_in"]:
-        db = SessionLocal()
-        try:
-            user = db.query(User).filter(User.email == st.session_state["user_email"]).first()
-            if user:
-                return user
-        finally:
-            db.close()
-
-    render_login_page()
-    st.stop()  # Stop drawing rest of the page!
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == st.session_state["user_email"]).first()
+        if user:
+            return user
+        # Fallback if the user does not exist
+        user = db.query(User).first()
+        if user:
+            st.session_state["user_email"] = user.email
+            st.session_state["user_name"] = user.name
+            return user
+    finally:
+        db.close()
 
 def render_login_page():
     # Inject page config styling overrides for a consistent premium dark login look

@@ -21,12 +21,11 @@ assert user is not None  # check_login_status() calls st.stop() if not logged in
 st.title("⚙️ Workspace Settings")
 st.markdown("Manage your personal profile, display preferences, notifications, and security.")
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     "👤 Profile Management", 
     "🎨 Display Theme", 
     "🔔 Notification Preferences", 
-    "🔒 Security & Password", 
-    "🚪 Log Out"
+    "🔒 Security & Password"
 ])
 
 # 👤 PROFILE MANAGEMENT
@@ -196,16 +195,3 @@ with tab4:
                     st.rerun()
             finally:
                 db.close()
-
-# 🚪 LOG OUT
-with tab5:
-    st.subheader("Sign Out of Workspace")
-    st.markdown("Click the button below to close your current active session securely.")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🚪 Log Out / Sign Out", type="primary", use_container_width=True):
-        st.session_state["logged_in"] = False
-        st.session_state["user_email"] = None
-        st.session_state["user_name"] = None
-        st.success("Signed out successfully.")
-        st.rerun()
