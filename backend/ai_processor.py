@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 load_dotenv(override=True)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    GEMINI_API_KEY = GEMINI_API_KEY.strip('"\'')
 
 if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
     logger.warning("GEMINI_API_KEY is not set. Please set it in the .env file.")

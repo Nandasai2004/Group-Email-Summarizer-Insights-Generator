@@ -8,6 +8,8 @@ from backend.database import SessionLocal, Insight, Task
 
 load_dotenv(override=True)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    GEMINI_API_KEY = GEMINI_API_KEY.strip('"\'')
 
 def render_voice_option(text: str, key: str):
     encoded_text = urllib.parse.quote(text)
