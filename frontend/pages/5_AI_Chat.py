@@ -2,11 +2,77 @@ import streamlit as st
 from google import genai
 from google.genai import types
 import os
+import urllib.parse
 from dotenv import load_dotenv
 from backend.database import SessionLocal, Insight, Task
 
 load_dotenv(override=True)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+def render_voice_option(text: str, key: str):
+    encoded_text = urllib.parse.quote(text)
+    html_code = f"""
+    <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px; margin-bottom: 4px;">
+        <button id="btn-play-{key}" onclick="togglePlay()" style="background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.35); color: #a5b4fc; border-radius: 6px; padding: 5px 12px; font-size: 11px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; display: flex; align-items: center; gap: 5px;">🔊 Read Response</button>
+        <button id="btn-stop-{key}" onclick="stopSpeech()" style="background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #fca5a5; border-radius: 6px; padding: 5px 12px; font-size: 11px; cursor: pointer; display: none; transition: all 0.2s; font-family: 'Inter', sans-serif;">⏹️ Stop</button>
+    </div>
+    <script>
+    var synth = window.speechSynthesis || window.parent.speechSynthesis;
+    var utterance = null;
+    var rawText = decodeURIComponent("{encoded_text}");
+
+    function togglePlay() {{
+        if (!synth) {{
+            alert("Text-to-speech is not supported in this browser.");
+            return;
+        }}
+        
+        synth.cancel();
+        
+        // Clean up markdown syntax so the voice reads it naturally
+        var cleanText = rawText.replace(/[*#`_\-]/g, "")
+                               .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // clean markdown links
+                               .replace(/\\n/g, " ");
+
+        utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        var btnPlay = document.getElementById("btn-play-{key}");
+        var btnStop = document.getElementById("btn-stop-{key}");
+        
+        utterance.onstart = function() {{
+            btnPlay.innerText = "🔊 Playing...";
+            btnPlay.style.background = "rgba(99,102,241,0.25)";
+            btnStop.style.display = "inline-block";
+        }};
+        
+        utterance.onend = function() {{
+            resetUI();
+        }};
+        
+        utterance.onerror = function() {{
+            resetUI();
+        }};
+        
+        synth.speak(utterance);
+    }}
+
+    function stopSpeech() {{
+        if (synth) {{
+            synth.cancel();
+        }}
+        resetUI();
+    }}
+
+    function resetUI() {{
+        var btnPlay = document.getElementById("btn-play-{key}");
+        var btnStop = document.getElementById("btn-stop-{key}");
+        btnPlay.innerText = "🔊 Read Response";
+        btnPlay.style.background = "rgba(99,102,241,0.12)";
+        btnStop.style.display = "none";
+    }}
+    </script>
+    """
+    st.components.v1.html(html_code, height=36)
 
 st.set_page_config(
     page_title="AI Chat Assistant",
@@ -75,9 +141,11 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # Display chat messages from history on app rerun
-for message in st.session_state.messages:
+for idx, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+        if message["role"] == "assistant":
+            render_voice_option(message["content"], f"hist_{idx}")
 
 def get_db_context():
     db = SessionLocal()
@@ -137,6 +205,7 @@ if prompt := st.chat_input("Ask me about pending issues, tasks, or trends..."):
                 full_response += (chunk.text or "")
                 message_placeholder.markdown(full_response + "▌")
             message_placeholder.markdown(full_response)
+            render_voice_option(full_response, "current")
         except Exception as e:
             st.error(f"Error communicating with Gemini: {e}")
             
