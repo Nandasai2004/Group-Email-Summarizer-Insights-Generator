@@ -13,6 +13,7 @@ try:
     import chromadb
     CHROMADB_AVAILABLE = True
 except ImportError:
+    chromadb = None # type: ignore
     CHROMADB_AVAILABLE = False
 
 logging.basicConfig(level=logging.INFO)
