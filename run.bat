@@ -1,0 +1,13 @@
+@echo off
+echo Starting Group Email Summarizer Platform...
+
+echo Activating virtual environment...
+call venv\Scripts\activate.bat
+
+echo Starting FastAPI Backend...
+start "FastAPI Server" cmd /k "uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload"
+
+echo Starting Streamlit Dashboard...
+start "Streamlit Dashboard" cmd /k "python -m streamlit run frontend/app.py"
+
+echo Services have been started in separate windows!
