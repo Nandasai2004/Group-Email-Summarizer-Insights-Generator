@@ -385,6 +385,70 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# ── HERO SEARCH BAR ──────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+.search-wrapper {
+    max-width: 680px;
+    margin: 0 auto 32px;
+    position: relative;
+}
+.search-wrapper [data-testid="stTextInput"] input {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1.5px solid rgba(99,102,241,0.4) !important;
+    border-radius: 50px !important;
+    color: #e2e8f0 !important;
+    font-size: 15px !important;
+    padding: 14px 24px 14px 52px !important;
+    height: 52px !important;
+    box-shadow: 0 4px 20px rgba(99,102,241,0.12) !important;
+    transition: all 0.3s ease !important;
+}
+.search-wrapper [data-testid="stTextInput"] input:focus {
+    border-color: rgba(99,102,241,0.8) !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.2) !important;
+    background: rgba(255,255,255,0.09) !important;
+}
+.search-wrapper [data-testid="stTextInput"] input::placeholder {
+    color: #475569 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+search_col1, search_col2, search_col3 = st.columns([1, 3, 1])
+with search_col2:
+    st.markdown('<div class="search-wrapper">', unsafe_allow_html=True)
+    search_query = st.text_input("", placeholder="🔍  Search emails by subject, sender, or keyword...", key="hero_search", label_visibility="collapsed")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+if search_query and search_query.strip():
+    db = SessionLocal()
+    try:
+        q = search_query.strip().lower()
+        results = db.query(Email).filter(
+            (Email.subject.ilike(f"%{q}%")) |
+            (Email.from_name.ilike(f"%{q}%")) |
+            (Email.email_body.ilike(f"%{q}%")) |
+            (Email.department.ilike(f"%{q}%"))
+        ).limit(8).all()
+    finally:
+        db.close()
+
+    if results:
+        st.markdown(f'<div class="section-header" style="text-align:center; margin-bottom:8px">🔎 {len(results)} results for "{search_query}"</div>', unsafe_allow_html=True)
+        for r in results:
+            with st.expander(f"📧 {r.subject} — {r.from_name} ({r.department})"):
+                col_a, col_b = st.columns([1, 2])
+                with col_a:
+                    st.markdown(f"**From:** {r.from_name}")
+                    st.markdown(f"**To:** {r.to_group}")
+                    st.markdown(f"**Dept:** {r.department}")
+                    st.markdown(f"**Priority:** {r.priority}")
+                with col_b:
+                    st.markdown(r.email_body[:400] + ("..." if len(str(r.email_body)) > 400 else ""))
+    else:
+        st.info(f'No emails found for "{search_query}".')
+
 # ── LIVE STATS GRID ──────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="stats-grid">
@@ -505,34 +569,22 @@ with col_right:
     with btn_col4:
         st.markdown("""
         <div class="feature-card">
-            <span class="feature-icon">🔍</span>
-            <div class="feature-title">Search</div>
-            <div class="feature-desc">Semantic &amp; keyword search across your email history.</div>
-        </div>""", unsafe_allow_html=True)
-        if st.button("→ Open Search", key="nav_search", use_container_width=True):
-            st.switch_page("pages/4_Search.py")
-
-    # Row 3
-    btn_col5, btn_col6 = st.columns(2)
-    with btn_col5:
-        st.markdown("""
-        <div class="feature-card">
             <span class="feature-icon">🤖</span>
             <div class="feature-title">AI Chat</div>
             <div class="feature-desc">Ask the AI about pending issues, risks &amp; trends.</div>
         </div>""", unsafe_allow_html=True)
-        if st.button("→ Open AI Chat", key="nav_chat", use_container_width=True):
+        if st.button("→ Open AI Chat", key="nav_chat2", use_container_width=True):
             st.switch_page("pages/5_AI_Chat.py")
 
-    with btn_col6:
-        st.markdown("""
-        <div class="feature-card">
-            <span class="feature-icon">📋</span>
-            <div class="feature-title">Executive Report</div>
-            <div class="feature-desc">Generate macro-level intelligence reports by date range.</div>
-        </div>""", unsafe_allow_html=True)
-        if st.button("→ Open Report", key="nav_report", use_container_width=True):
-            st.switch_page("pages/6_Executive_Report.py")
+    # Row 3 — Executive Report full width
+    st.markdown("""
+    <div class="feature-card" style="text-align:center">
+        <span class="feature-icon">📋</span>
+        <div class="feature-title">Executive Report</div>
+        <div class="feature-desc">Generate macro-level intelligence reports &amp; summaries by date range.</div>
+    </div>""", unsafe_allow_html=True)
+    if st.button("→ Open Executive Report", key="nav_report", use_container_width=True):
+        st.switch_page("pages/6_Executive_Report.py")
 
 
 
