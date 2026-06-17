@@ -16,7 +16,9 @@ inject_theme_manager()
 
 # ── Auth check ──
 user = check_login_status()
-assert user is not None  # check_login_status() calls st.stop() if not logged in
+if user is None:
+    st.error("⚠️ Unable to load user profile. Please check your database configuration.")
+    st.stop()
 
 st.title("⚙️ Workspace Settings")
 st.markdown("Manage your personal profile, display preferences, notifications, and security.")

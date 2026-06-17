@@ -1,6 +1,12 @@
 fastapi
+uvicorn[standard]
 sqlalchemy
 pydantic
 google-genai
 python-dotenv
 tenacity
+streamlit
+pandas
+plotly
+chromadb
+fpdf2

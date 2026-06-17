@@ -462,7 +462,7 @@ st.markdown("""
 search_col1, search_col2, search_col3 = st.columns([1, 3, 1])
 with search_col2:
     st.markdown('<div class="search-wrapper">', unsafe_allow_html=True)
-    search_query = st.text_input("", placeholder="🔍  Search emails by subject, sender, or keyword...", key="hero_search", label_visibility="collapsed")
+    search_query = st.text_input("Search", placeholder="🔍  Search emails by subject, sender, or keyword...", key="hero_search", label_visibility="collapsed")
     st.markdown('</div>', unsafe_allow_html=True)
 
 if search_query and search_query.strip():
