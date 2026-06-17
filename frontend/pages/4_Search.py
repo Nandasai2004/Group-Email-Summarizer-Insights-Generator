@@ -35,19 +35,28 @@ if query:
                 model="gemini-embedding-2",
                 contents=query
             )
+            
+            if not embed_response.embeddings:
+                st.error("No embeddings returned.")
+                st.stop()
+                
             query_embedding = embed_response.embeddings[0].values
+            assert query_embedding is not None, "Query embedding values are None"
             
             results = insight_collection.query(
                 query_embeddings=[query_embedding],
                 n_results=3
             )
             
-            if results and results['ids'] and len(results['ids'][0]) > 0:
+            if results and results.get('ids') and results['ids'] and len(results['ids'][0]) > 0:
                 semantic_results_found = True
-                for idx, thread_id in enumerate(results['ids'][0]):
-                    doc = results['documents'][0][idx]
-                    distance = results['distances'][0][idx]
-                    # Lower distance = better match (for standard L2). We can just show it.
+                ids_list = results['ids'][0]
+                docs_list = results.get('documents', [[None]])
+                dists_list = results.get('distances', [[None]])
+                
+                for idx, thread_id in enumerate(ids_list):
+                    doc = docs_list[0][idx] if docs_list and docs_list[0] else "No document"
+                    distance = dists_list[0][idx] if dists_list and dists_list[0] else 0.0
                     with st.expander(f"Semantic Match (Thread ID: {thread_id})"):
                         st.write(doc)
             else:

@@ -63,13 +63,21 @@ for q in queries:
         model="gemini-embedding-2",
         contents=q
     )
-    results = insight_collection.query(
-        query_embeddings=[embed_response.embeddings[0].values],
-        n_results=1
-    )
-    if results and results['documents'] and len(results['documents'][0]) > 0:
-        print(f"Match: {results['documents'][0][0]}")
+    
+    if embed_response.embeddings:
+        query_embedding = embed_response.embeddings[0].values
+        if query_embedding:
+            results = insight_collection.query(
+                query_embeddings=[query_embedding],
+                n_results=1
+            )
+            if results and results.get('documents') and results['documents'] and len(results['documents'][0]) > 0:
+                print(f"Match: {results['documents'][0][0]}")
+            else:
+                print("Match: NONE")
+        else:
+            print("Match: NONE (No values in embedding)")
     else:
-        print("Match: NONE")
+        print("Match: NONE (No embeddings returned)")
 
 conn.close()
