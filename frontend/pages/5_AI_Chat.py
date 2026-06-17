@@ -8,7 +8,60 @@ from backend.database import SessionLocal, Insight, Task
 load_dotenv(override=True)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-st.set_page_config(page_title="AI Chat Assistant", page_icon="🤖", layout="wide")
+st.set_page_config(
+    page_title="AI Chat Assistant",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# ── Custom CSS ──────────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Dark gradient background */
+.stApp {
+    background: linear-gradient(135deg, #0a0a1a 0%, #0d1b2a 40%, #0a1628 100%);
+    color: #e2e8f0;
+}
+
+/* Hide default Streamlit elements */
+#MainMenu, footer, header { visibility: hidden; }
+
+/* ── HAMBURGER MENU BUTTON ── */
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    color: #ffffff !important;
+    top: 14px !important;
+    left: 14px !important;
+    width: 42px !important;
+    height: 42px !important;
+    box-shadow: 0 4px 15px rgba(99,102,241,0.5) !important;
+    transition: all 0.25s ease !important;
+}
+[data-testid="collapsedControl"]:hover {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+    box-shadow: 0 6px 25px rgba(99,102,241,0.7) !important;
+    transform: scale(1.08) !important;
+}
+[data-testid="collapsedControl"] svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
+}
+/* Hide sidebar collapse arrow when open */
+[data-testid="stSidebarCollapseButton"] { display: none !important; }
+</style>
+""", unsafe_allow_html=True)
 st.title("🤖 AI Chat Assistant")
 
 if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
