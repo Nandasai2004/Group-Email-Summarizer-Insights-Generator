@@ -10,6 +10,10 @@ from backend.ai_processor import process_single_thread
 
 app = FastAPI(title="GES Webhook API")
 
+@app.get("/")
+def root():
+    return {"message": "hello world"}
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
