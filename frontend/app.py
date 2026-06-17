@@ -34,16 +34,26 @@ html, body, [class*="css"] {
 [data-testid="collapsedControl"] {
     display: flex !important;
     visibility: visible !important;
-    background: rgba(99,102,241,0.15) !important;
-    border: 1px solid rgba(99,102,241,0.35) !important;
-    border-radius: 8px !important;
-    color: #a5b4fc !important;
-    top: 12px !important;
-    left: 12px !important;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    color: #ffffff !important;
+    top: 14px !important;
+    left: 14px !important;
+    width: 42px !important;
+    height: 42px !important;
+    box-shadow: 0 4px 15px rgba(99,102,241,0.5) !important;
+    transition: all 0.25s ease !important;
 }
 [data-testid="collapsedControl"]:hover {
-    background: rgba(99,102,241,0.3) !important;
-    border-color: rgba(99,102,241,0.6) !important;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+    box-shadow: 0 6px 25px rgba(99,102,241,0.7) !important;
+    transform: scale(1.08) !important;
+}
+[data-testid="collapsedControl"] svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
 }
 /* Hide sidebar collapse arrow when open */
 [data-testid="stSidebarCollapseButton"] { display: none !important; }
