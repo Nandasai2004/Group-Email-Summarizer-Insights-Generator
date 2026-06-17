@@ -5,7 +5,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./ges.db")
+# Vercel serverless environment has a read-only filesystem except for /tmp
+if os.getenv("VERCEL") or os.getenv("VERCEL_ENV"):
+    default_db_url = "sqlite:////tmp/ges.db"
+else:
+    default_db_url = "sqlite:///./ges.db"
+
+DATABASE_URL = os.getenv("DATABASE_URL", default_db_url)
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {})
 
