@@ -492,8 +492,38 @@ def inject_theme_manager():
                     .stat-card.blue   { background: rgba(59, 130, 246, 0.07) !important; border-color: rgba(59,130,246,0.15) !important; }
                     .stat-card.green  { background: rgba(16, 185, 129, 0.07) !important; border-color: rgba(16,185,129,0.15) !important; }
                     .stat-card.orange { background: rgba(245, 158, 11, 0.07) !important; border-color: rgba(245,158,11,0.15) !important; }
-                    .stat-card .stat-value { color: #0f172a !important; }
+                    
+                    .stat-card.purple .stat-number { color: #4f46e5 !important; }
+                    .stat-card.blue .stat-number   { color: #2563eb !important; }
+                    .stat-card.green .stat-number  { color: #059669 !important; }
+                    .stat-card.orange .stat-number { color: #d97706 !important; }
+                    
                     .stat-card .stat-label { color: #475569 !important; }
+                    .stat-card .stat-sub { color: #64748b !important; }
+
+                    /* Hero typography overrides */
+                    .hero-title {
+                        background: linear-gradient(135deg, #0f172a 0%, #312e81 60%, #4f46e5 100%) !important;
+                        -webkit-background-clip: text !important;
+                        -webkit-text-fill-color: transparent !important;
+                        background-clip: text !important;
+                    }
+                    .hero-subtitle {
+                        color: #475569 !important;
+                    }
+
+                    /* Details panel overrides */
+                    .details-panel {
+                        background: rgba(255, 255, 255, 0.8) !important;
+                        border-color: rgba(99, 102, 241, 0.2) !important;
+                        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05) !important;
+                    }
+                    .details-title {
+                        color: #0f172a !important;
+                    }
+                    .details-subtitle {
+                        color: #475569 !important;
+                    }
                 `;
             } else {
                 iframeStyle.innerHTML = '';
